@@ -1,0 +1,156 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+using namespace std;
+
+class Student {
+public:
+    int studentID;
+    char name[50];
+    int age;
+    char course[50];
+    char email[50];
+    char phone[20];
+    char address[100];
+
+    void input() {
+        cout << "Enter Student ID: ";
+        cin >> studentID;
+        cin.ignore();
+        cout << "Enter Name: ";
+        cin.getline(name, 50);
+        cout << "Enter Age: ";
+        cin >> age;
+        cin.ignore();
+        cout << "Enter Course: ";
+        cin.getline(course, 50);
+        cout << "Enter Email: ";
+        cin.getline(email, 50);
+        cout << "Enter Phone Number: ";
+        cin.getline(phone, 20);
+        cout << "Enter Address: ";
+        cin.getline(address, 100);
+    }
+
+    void display() const {
+        cout << "\n----------------------------------\n";
+        cout << "Student ID   : " << studentID << endl;
+        cout << "Name         : " << name << endl;
+        cout << "Age          : " << age << endl;
+        cout << "Course       : " << course << endl;
+        cout << "Email        : " << email << endl;
+        cout << "Phone Number : " << phone << endl;
+        cout << "Address      : " << address << endl;
+    }
+
+    int getID() const {
+        return studentID;
+    }
+};
+
+// File name for storing data
+const char* FILENAME = "students.dat";
+
+// Function to add a student
+void addStudent() {
+    ofstream fout(FILENAME, ios::binary | ios::app);
+    Student s;
+    s.input();
+    fout.write(reinterpret_cast<char*>(&s), sizeof(s));
+    fout.close();
+    cout << "\nStudent added successfully!\n";
+}
+
+// Function to view all students
+void viewStudents() {
+    ifstream fin(FILENAME, ios::binary);
+    Student s;
+    bool found = false;
+    while (fin.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        s.display();
+        found = true;
+    }
+    fin.close();
+    if (!found) {
+        cout << "\nNo student records found.\n";
+    }
+}
+
+// Function to update student info
+void updateStudent() {
+    int id;
+    cout << "Enter Student ID to update: ";
+    cin >> id;
+    fstream file(FILENAME, ios::binary | ios::in | ios::out);
+    Student s;
+    bool found = false;
+    while (!found && file.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.getID() == id) {
+            cout << "\nCurrent details:";
+            s.display();
+            cout << "\nEnter new details:\n";
+            s.input();
+            file.seekp(-static_cast<int>(sizeof(s)), ios::cur);
+            file.write(reinterpret_cast<char*>(&s), sizeof(s));
+            found = true;
+            cout << "\nRecord updated successfully.\n";
+        }
+    }
+    file.close();
+    if (!found) {
+        cout << "\nStudent ID not found.\n";
+    }
+}
+
+// Function to delete a student
+void deleteStudent() {
+    int id;
+    cout << "Enter Student ID to delete: ";
+    cin >> id;
+    ifstream fin(FILENAME, ios::binary);
+    ofstream fout("temp.dat", ios::binary);
+    Student s;
+    bool deleted = false;
+    while (fin.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.getID() == id) {
+            deleted = true;
+            continue; // skip writing to temp
+        }
+        fout.write(reinterpret_cast<char*>(&s), sizeof(s));
+    }
+    fin.close();
+    fout.close();
+    remove(FILENAME);
+    rename("temp.dat", FILENAME);
+    if (deleted)
+        cout << "\nRecord deleted successfully.\n";
+    else
+        cout << "\nStudent ID not found.\n";
+}
+void menu() {
+    int choice;
+    do {
+        cout << "\n==== Mini Student Management System ====\n";
+        cout << "1. Add Student Record\n";
+        cout << "2. View All Student Records\n";
+        cout << "3. Update Student Record\n";
+        cout << "4. Delete Student Record\n";
+        cout << "0. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+        cin.ignore(); // Clear newline
+
+        switch (choice) {
+            case 1: addStudent(); break;
+            case 2: viewStudents(); break;
+            case 3: updateStudent(); break;
+            case 4: deleteStudent(); break;
+            case 0: cout << "\nExiting program...\n"; break;
+            default: cout << "\nInvalid choice. Try again.\n";
+        }
+    } while (choice != 0);
+}
+int main() {
+    menu();
+    return 0;
+}
